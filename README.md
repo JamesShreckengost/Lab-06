@@ -24,6 +24,7 @@
 
 
 ## Time Estimate
+### Day1
 Number and name of feature: getting started
 
 Estimate of time needed to complete: hour and a half
@@ -33,3 +34,13 @@ Start time: 4:30
 Finish time: 9:02
 
 Actual time needed to complete: 4 hours and 30 minutes
+### Day2 
+Number and name of feature: getting started: Dynamic code
+
+Estimate of time needed to complete: hour and a half
+
+Start time: 4:00
+
+Finish time: 9:00
+
+Actual time needed to complete:  hours

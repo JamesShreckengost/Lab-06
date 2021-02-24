@@ -12,6 +12,9 @@ const app = express();
 app.use(cors());
 
 const PORT = process.env.PORT || 3000;
+const LOCATION_API_KEY = process.env.LOCATION_API_KEY
+const PARKS_API_KEY = process.env.PARKS_API_KEY
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY
 
 
 
@@ -20,45 +23,87 @@ app.get('/location', handleGetLocation);
 
 function handleGetLocation(req, res) {
   // console.log(req, res)
-  console.log(req.query);//const queryFromTheFrontend = req.query
-  const dataFromTheFile = require('./data/location.json');
-  const output = new Location(dataFromTheFile, req.query.city);
-  res.send(output)
+  // console.log(req.query);//const queryFromTheFrontend = req.query
+  // const userData = require('./data/location.json');
+  // const output = new Location(userData, req.query.city);
+  // res.send(output)
+  const city = req.query.city;
+  const url = `https://us1.locationiq.com/v1/search.php?key=${LOCATION_API_KEY}&q=${city}&format=json`;
+
+  superagent.get(url)
+    .then(userData => {
+      const output = new Location(userData.body, req.query.city);
+      res.send(output);
+  })
 }
 
-function Location(dataFromTheFile, cityName) {
+function Location(userData, cityName) {
   this.search_query = cityName;
-  this.formatted_query = dataFromTheFile[0].display_name;
-  this.latitude = dataFromTheFile[0].lat;
-  this.longitude = dataFromTheFile[0].lon;
+  this.formatted_query = userData[0].display_name;
+  this.latitude = userData[0].lat;
+  this.longitude = userData[0].lon;
 }
 
 app.get('/weather', handleGetWeather);
 
 function handleGetWeather(req, res) {
-  console.log(req.query);
-  const dataFromTheFile = require('./data/weather.json');
-  const output = [];
+  console.log('jim')
+  const city = req.query.search_query;
+  const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${city}&key=${WEATHER_API_KEY}`;
 
-  for (let i = 0; i < dataFromTheFile.data.length; i++) {
-    console.log(dataFromTheFile.data[i]);
-    output.push(new Weather(dataFromTheFile.data[i]));
-  }
-  res.send(output);
+  superagent.get(url)
+    .then(userData => {
+      // console.log(userData.body)
+      const output = [];
+
+      for (let i = 0; i < userData.body.data.length; i++) {
+        // console.log('test');
+        output.push(new Weather(userData.body.data[i]));
+      }
+      res.send(output);
+    })
+    .catch(err => console.error(err))
 }
 
-function Weather(data) {
-  this.forecast = data.weather.description;
-  this.time = data.valid_date;
+function Weather(userData) {
+  this.forecast = userData.weather.description;
+  this.time = userData.valid_date;
+}
+
+app.get('/parks', handleParks);
+
+function handleParks(req, res) {
+  const city = req.query.search_query;
+  const url = `https://developer.nps.gov/api/v1/parks?q=${city}&api_key=${PARKS_API_KEY}`
+
+  superagent.get(url)
+    .then(userData => {
+      // console.log("userdata function" + userData.body.data);
+      const output = [];
+
+      for (let i = 0; i < userData.body.data.length; i++){
+        // console.log('test');
+        output.push(new Parks(userData.body.data[i]))
+      }
+      res.send(output);
+    })
+    .catch(err => console.error(err))
+}
+
+function Parks(userData) {
+  // console.log("within parks function" + userData.fullName);
+  this.name = userData.fullName;
+  this.address = userData.addresses[0].line1;
+  this.fee = userData.fees;
+  this.description = userData.description;
+  this.url = userData.url;
 }
 
 app.get('*', handleError);
 
-  function handleError(req, res) {
-    res.send({status: 500, response: "Sorry something went wrong"})
-  }
-
-  
+function handleError(req, res) {
+  res.send({ status: 500, response: "Sorry something went wrong" })
+}
 
 
 
