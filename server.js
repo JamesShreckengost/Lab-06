@@ -4,7 +4,9 @@
 const express = require('express');
 const cors = require('cors'); // just kinda works and we need it
 const superagent = require('superagent');
-require('dotenv').config(); // read the `env.` file's saved env variables AFTER reading the terminal's real env's variable
+const pg = require('pg');
+require('dotenv').config(); // read the `env.` 
+// file's saved env variables AFTER reading the terminal's real env's variable
 
 
 // ============== App =============================================
@@ -16,22 +18,24 @@ const LOCATION_API_KEY = process.env.LOCATION_API_KEY
 const PARKS_API_KEY = process.env.PARKS_API_KEY
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY
 
-
-
 // ================= Routes =======================================
 app.get('/location', handleGetLocation);
-
+// const app = express? 
 function handleGetLocation(req, res) {
-  // console.log(req, res)
-  // console.log(req.query);//const queryFromTheFrontend = req.query
-  // const userData = require('./data/location.json');
-  // const output = new Location(userData, req.query.city);
-  // res.send(output)
   const city = req.query.city;
   const url = `https://us1.locationiq.com/v1/search.php?key=${LOCATION_API_KEY}&q=${city}&format=json`;
 
   superagent.get(url)
     .then(userData => {
+      if(userData.rows){
+        res.send('You already searched this Location')
+      } else {
+        const sqlString = 'SELECT * FROM book_people WHERE name=$1';
+        const sqlCheckingArray = [req.query.name]
+      }
+
+
+
       const output = new Location(userData.body, req.query.city);
       res.send(output);
   })
@@ -43,6 +47,7 @@ function Location(userData, cityName) {
   this.latitude = userData[0].lat;
   this.longitude = userData[0].lon;
 }
+
 
 app.get('/weather', handleGetWeather);
 
@@ -69,6 +74,7 @@ function Weather(userData) {
   this.forecast = userData.weather.description;
   this.time = userData.valid_date;
 }
+
 
 app.get('/parks', handleParks);
 
@@ -99,14 +105,12 @@ function Parks(userData) {
   this.url = userData.url;
 }
 
+
 app.get('*', handleError);
 
 function handleError(req, res) {
   res.send({ status: 500, response: "Sorry something went wrong" })
 }
-
-
-
 
 
 // =============================
