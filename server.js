@@ -131,11 +131,14 @@ function handleMoviefunction (req, res) {
 }
 
 function Movies(userData) {
-  this.title = userData.orignal_title;
+  this.title = userData.original_title;
   this.overview = userData.overview;
+  this.average_votes = userData.vote_average;
+  this.total_votes = userData.vote_count;
+  this.image_url = `https://www.themoviedb.org/t/p/w600_and_h900_bestv2${userData.poster_path}`
   this.popularity = userData.popularity;
   this.released_on = userData.release_date;
-  this.title = userData.title 
+ 
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------------------
