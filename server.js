@@ -18,8 +18,11 @@ const LOCATION_API_KEY = process.env.LOCATION_API_KEY;
 const PARKS_API_KEY = process.env.PARKS_API_KEY;
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
+const MOVIE_API_KEY = process.env.MOVIE_API_KEY;
+const YELP_API_KEY = process.env.YELP_API_KEY;
 const client = new pg.Client(DATABASE_URL);
 client.on('error', error => console.log(error));
+
 
 // ================= Routes =======================================
 
@@ -31,11 +34,6 @@ function handleGetLocation(req, res) {
   const sqlString = 'SELECT * FROM location WHERE search_query=$1'
   const sqlArray = [city]
 
-  // ask database do you have this location
-  // if it has it res.send right back to sender
-  // else do my normal superagent stuff 
-  // talk to my database one more time to save this city
-  //  res.send(output); dont have to wait for save to take place
   client.query(sqlString, sqlArray)
   .then((results) => {
     if(results.rows.length > 0){
@@ -45,12 +43,10 @@ function handleGetLocation(req, res) {
       .then(userData => {
        const output = new Location(userData.body, req.query.city);
 
-
         const sqlStringSaved = 'INSERT INTO location (search_query, formatted_query, latitude, longitude) VALUES($1, $2, $3, $4)';
         const sqlArraySaved = [city, output.formatted_query, output.latitude, output.longitude];
 
         client.query(sqlStringSaved, sqlArraySaved);
-
         res.send(output);
     });
     }
@@ -75,13 +71,6 @@ function handleGetWeather(req, res) {
 
   superagent.get(url)
     .then(userData => {
-      // console.log(userData.body)
-      // const output = [];
-
-      // for (let i = 0; i < userData.body.data.length; i++) {
-      //   // console.log('test');
-      //   output.push(new Weather(userData.body.data[i]));
-      // }
       const output = userData.body.data.map(eachWeather => {
         return new Weather(eachWeather);
       })
@@ -104,12 +93,9 @@ function handleParks(req, res) {
 
   superagent.get(url)
     .then(userData => {
-      // console.log("userdata function" + userData.body.data);
-      const output = [];
-      for (let i = 0; i < userData.body.data.length; i++){
-        // console.log('test');
-        output.push(new Parks(userData.body.data[i]))
-      }
+      const output = userData.body.data.map(eachPark => {
+        return new Parks(eachPark);
+      })
       res.send(output);
     })
     .catch(err => console.error(err))
@@ -124,8 +110,62 @@ function Parks(userData) {
   this.url = userData.url;
 }
 
-//-----------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+app.get('/movies', handleMoviefunction);
 
+function handleMoviefunction (req, res) {
+  const city = req.query.search_query;
+  console.log(req.query)
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${MOVIE_API_KEY}&query=${city}&page=1`;
+  
+  superagent.get(url)
+  .then(userData => {
+    console.log(userData.body.results);
+    const output = userData.body.results.map(eachMovie => {
+      return new Movies(eachMovie);
+    })
+    
+    res.send(output);
+  })
+  .catch(err => console.error(err))
+}
+
+function Movies(userData) {
+  this.title = userData.orignal_title;
+  this.overview = userData.overview;
+  this.popularity = userData.popularity;
+  this.released_on = userData.release_date;
+  this.title = userData.title 
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------------------
+app.get('/yelp', handleRestaurantsFunction);
+
+function handleRestaurantsFunction(req, res) {
+  const city = req.query.city;
+  const url = `https://api.yelp.com/v3/businesses/search?location=${city}`;
+  superagent.get(url)
+  .set('Authorization', `Bearer ${YELP_API_KEY}`)
+  .then(userData => {
+    console.log(userData.body)
+    const output = userData.body.businesses.map(eachRestaurant => {
+      return new Restaurants(eachRestaurant);
+    })
+    res.send(output);
+  })
+  .catch(err => console.error(err))
+}
+
+function Restaurants(userData) {
+  this.name = userData.name;
+  this.image_url = userData.image_url;
+  this.price = userData.price;
+  this.rating = userData.rating;
+  this.url = userData.url
+}
+
+
+// ---------------------------------------------------------------------
 app.get('*', handleError);
 
 function handleError(req, res) {
