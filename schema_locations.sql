@@ -1,8 +1,9 @@
-DROP TABLE book_people;
+DROP TABLE location;
 
-CREATE TABLE book_people (
+CREATE TABLE location (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(255),
-  fav_book VARCHAR(255),
-  class INTEGER
+  search_query VARCHAR(255),
+  formatted_query VARCHAR(255),
+  latitude NUMERIC(10, 7),
+  longitude NUMERIC(10, 7)
 )
